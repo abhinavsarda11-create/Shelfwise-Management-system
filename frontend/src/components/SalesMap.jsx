@@ -8,9 +8,8 @@ export default function SalesMap({ points }) {
 
   useEffect(() => {
     const map = L.map(el.current, { scrollWheelZoom: false }).setView([22.8, 79.5], 5);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
-      subdomains: 'abcd',
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors',
       maxZoom: 12,
     }).addTo(map);
 
