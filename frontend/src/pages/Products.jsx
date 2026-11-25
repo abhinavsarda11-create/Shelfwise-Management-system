@@ -5,6 +5,7 @@ import Modal from '../components/Modal';
 import { api } from '../api';
 import { money } from '../format';
 import { toast } from '../toast';
+import { useAuth } from '../auth';
 
 const categories = ['Staples', 'Dairy & Beverages', 'Snacks & Biscuits', 'Personal Care', 'Household', 'Stationery', 'Electricals'];
 
@@ -83,6 +84,7 @@ function AdjustStock({ row, reload }) {
 }
 
 export default function Products() {
+  const { can } = useAuth();
   return (
     <Resource
       title="Products"
@@ -91,9 +93,11 @@ export default function Products() {
       columns={columns}
       fields={fields}
       filters={filters}
-      lookups={{ supplier: '/suppliers' }}
+      canWrite={can('products:write')}
+      canDelete={can('products:delete')}
+      lookups={can('suppliers:read') ? { supplier: '/suppliers' } : {}}
       search={(r) => [r.name, r.sku, r.brand, r.category, r.supplier && r.supplier.name].join(' ')}
-      actions={(row, reload) => <AdjustStock row={row} reload={reload} />}
+      actions={can('stock:adjust') ? (row, reload) => <AdjustStock row={row} reload={reload} /> : undefined}
       exportName="products.csv"
       exportRow={(r) => ({ Name: r.name, Brand: r.brand, SKU: r.sku, Category: r.category, Price: r.price, Stock: r.stock, ReorderLevel: r.reorderLevel, Supplier: r.supplier ? r.supplier.name : '' })}
     />

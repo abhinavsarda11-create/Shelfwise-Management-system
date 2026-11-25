@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const { Product, Supplier, Customer, Order, StockLog } = require('../models');
 const { wrap, fail } = require('../utils');
+const requires = require('../middleware/can');
 const { findCity } = require('../data/cities');
 
 const blocked = ['_id', 'owner', 'createdAt', 'updatedAt', '__v'];
@@ -31,21 +32,21 @@ const withGeo = (body, doc) => {
 };
 
 function crud(path, Model, config = {}) {
-  const { populate, lockOnUpdate = [], usedBy, afterCreate, afterDelete, prepare = (body) => body } = config;
+  const { perms, populate, lockOnUpdate = [], usedBy, afterCreate, afterDelete, prepare = (body) => body } = config;
   const finish = (doc) => (populate ? doc.populate(populate) : doc);
 
-  router.get(path, wrap(async (req, res) => {
+  router.get(path, requires(perms.read), wrap(async (req, res) => {
     const query = Model.find({ owner: req.owner }).sort({ createdAt: -1 });
     res.json(await (populate ? query.populate(populate) : query));
   }));
 
-  router.post(path, wrap(async (req, res) => {
+  router.post(path, requires(perms.write), wrap(async (req, res) => {
     const doc = await Model.create({ ...prepare(clean(req.body, true)), owner: req.owner });
-    if (afterCreate) await afterCreate(doc);
+    if (afterCreate) await afterCreate(doc, req);
     res.status(201).json(await finish(doc));
   }));
 
-  router.put(`${path}/:id`, wrap(async (req, res) => {
+  router.put(`${path}/:id`, requires(perms.write), wrap(async (req, res) => {
     const doc = await Model.findOne({ _id: req.params.id, owner: req.owner });
     if (!doc) throw fail(404, 'Record not found');
     const body = prepare(clean(req.body, false), doc);
@@ -55,7 +56,7 @@ function crud(path, Model, config = {}) {
     res.json(await finish(doc));
   }));
 
-  router.delete(`${path}/:id`, wrap(async (req, res) => {
+  router.delete(`${path}/:id`, requires(perms.delete), wrap(async (req, res) => {
     const doc = await Model.findOne({ _id: req.params.id, owner: req.owner });
     if (!doc) throw fail(404, 'Record not found');
     if (usedBy && (await usedBy(doc))) throw fail(400, 'Cannot delete this record because other records depend on it');
@@ -66,25 +67,28 @@ function crud(path, Model, config = {}) {
 }
 
 crud('/products', Product, {
+  perms: { read: 'products:read', write: 'products:write', delete: 'products:delete' },
   populate: 'supplier',
   lockOnUpdate: ['stock'],
   usedBy: (doc) => Order.exists({ owner: doc.owner, 'items.product': doc._id }),
-  afterCreate: (doc) =>
-    doc.stock > 0 && StockLog.create({ owner: doc.owner, product: doc._id, change: doc.stock, balance: doc.stock, reason: 'Opening stock' }),
+  afterCreate: (doc, req) =>
+    doc.stock > 0 && StockLog.create({ owner: doc.owner, product: doc._id, change: doc.stock, balance: doc.stock, reason: 'Opening stock', by: req.user.name }),
   afterDelete: (doc) => StockLog.deleteMany({ owner: doc.owner, product: doc._id }),
 });
 
 crud('/suppliers', Supplier, {
+  perms: { read: 'suppliers:read', write: 'suppliers:write', delete: 'suppliers:delete' },
   prepare: withGeo,
   usedBy: (doc) => Product.exists({ owner: doc.owner, supplier: doc._id }),
 });
 
 crud('/customers', Customer, {
+  perms: { read: 'customers:read', write: 'customers:write', delete: 'customers:delete' },
   prepare: withGeo,
   usedBy: (doc) => Order.exists({ owner: doc.owner, customer: doc._id }),
 });
 
-router.post('/products/:id/stock', wrap(async (req, res) => {
+router.post('/products/:id/stock', requires('stock:adjust'), wrap(async (req, res) => {
   const change = Number(req.body.change);
   if (!Number.isInteger(change) || change === 0) throw fail(400, 'Enter a whole number other than zero');
   const filter = { _id: req.params.id, owner: req.owner };
@@ -100,11 +104,12 @@ router.post('/products/:id/stock', wrap(async (req, res) => {
     change,
     balance: product.stock,
     reason: String(req.body.reason || '').trim() || (change > 0 ? 'Restock' : 'Correction'),
+    by: req.user.name,
   });
   res.json(product);
 }));
 
-router.get('/stock-logs', wrap(async (req, res) => {
+router.get('/stock-logs', requires('stocklog:read'), wrap(async (req, res) => {
   res.json(await StockLog.find({ owner: req.owner }).sort({ createdAt: -1 }).limit(600).populate('product', 'name sku'));
 }));
 

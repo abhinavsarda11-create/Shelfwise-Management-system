@@ -1,4 +1,5 @@
 import Resource from '../components/Resource';
+import { useAuth } from '../auth';
 
 const fields = [
   { name: 'name', label: 'Supplier name', span: 2 },
@@ -16,6 +17,7 @@ const columns = [
 ];
 
 export default function Suppliers() {
+  const { can } = useAuth();
   return (
     <Resource
       title="Suppliers"
@@ -23,6 +25,8 @@ export default function Suppliers() {
       endpoint="/suppliers"
       columns={columns}
       fields={fields}
+      canWrite={can('suppliers:write')}
+      canDelete={can('suppliers:delete')}
       search={(r) => [r.name, r.phone, r.email, r.city, r.state].join(' ')}
       exportName="suppliers.csv"
       exportRow={(r) => ({ Name: r.name, Phone: r.phone, Email: r.email, City: r.city, State: r.state, Address: r.address })}

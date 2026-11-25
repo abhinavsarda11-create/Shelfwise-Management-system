@@ -1,12 +1,18 @@
 const router = require('express').Router();
 const { Order, Product, Customer, Supplier } = require('../models');
 const { wrap } = require('../utils');
+const requires = require('../middleware/can');
 
 const DAY = 86400000;
+const region = { $ifNull: ['$state', { $ifNull: ['$country', 'Unknown'] }] };
+
+router.use(requires('dashboard:view'));
 
 router.get('/', wrap(async (req, res) => {
   const owner = req.owner;
-  const from30 = new Date();
+  const latest = await Order.findOne({ owner }).sort({ createdAt: -1 }).select('createdAt');
+  const end = latest ? new Date(Math.min(latest.createdAt.getTime(), Date.now())) : new Date();
+  const from30 = new Date(end);
   from30.setUTCHours(0, 0, 0, 0);
   from30.setTime(from30.getTime() - 29 * DAY);
   const from60 = new Date(from30.getTime() - 30 * DAY);
@@ -44,7 +50,7 @@ router.get('/', wrap(async (req, res) => {
     ]),
     Order.aggregate([
       { $match: recent },
-      { $group: { _id: '$state', revenue: { $sum: '$total' }, orders: { $sum: 1 } } },
+      { $group: { _id: region, revenue: { $sum: '$total' }, orders: { $sum: 1 } } },
       { $sort: { revenue: -1 } },
       { $limit: 6 },
     ]),
@@ -61,6 +67,8 @@ router.get('/', wrap(async (req, res) => {
   });
 
   res.json({
+    asOf: end,
+    stale: end.getTime() < Date.now() - 3 * DAY,
     counts: { products, customers, suppliers, pending },
     current: pick('current'),
     previous: pick('previous'),

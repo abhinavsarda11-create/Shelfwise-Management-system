@@ -15,7 +15,7 @@ async function request(path, options = {}) {
   const data = await res.json().catch(() => ({}));
   if (res.status === 401 && token && !path.startsWith('/auth/login')) {
     session.clear();
-    window.dispatchEvent(new Event('signed-out'));
+    window.dispatchEvent(new CustomEvent('signed-out', { detail: data.error }));
   }
   if (!res.ok) throw new Error(data.error || 'Something went wrong');
   return data;

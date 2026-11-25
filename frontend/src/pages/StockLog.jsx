@@ -39,7 +39,7 @@ export default function StockLog() {
         {logs === null ? <p className="empty">Loading…</p> : shown.length === 0 ? <p className="empty">No stock movements found.</p> : (
           <div className="table-wrap">
             <table>
-              <thead><tr><th>When</th><th>Product</th><th>Change</th><th className="num">Balance</th><th>Reason</th></tr></thead>
+              <thead><tr><th>When</th><th>Product</th><th>Change</th><th className="num">Balance</th><th>Reason</th><th>By</th></tr></thead>
               <tbody>
                 {pager.slice.map((l) => (
                   <tr key={l._id}>
@@ -48,6 +48,7 @@ export default function StockLog() {
                     <td><span className={'badge ' + (l.change > 0 ? 'ok' : 'warn')}>{l.change > 0 ? `+${l.change}` : l.change}</span></td>
                     <td className="num">{l.balance}</td>
                     <td>{l.reason}</td>
+                    <td>{l.by || '—'}</td>
                   </tr>
                 ))}
               </tbody>

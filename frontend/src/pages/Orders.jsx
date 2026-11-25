@@ -6,6 +6,7 @@ import { Pager, usePaged } from '../components/Pager';
 import { api } from '../api';
 import { dateTime, downloadCsv, money, statusClass } from '../format';
 import { toast } from '../toast';
+import { useAuth } from '../auth';
 
 const tabs = ['All', 'Placed', 'Delivered', 'Cancelled'];
 const payments = ['UPI', 'Cash', 'Card', 'Credit'];
@@ -123,6 +124,7 @@ function Invoice({ order, onClose }) {
           <div className="right">
             <p><b>{order.orderNo}</b></p>
             <p>{dateTime(order.createdAt)}</p>
+            {order.servedBy && <p>Served by {order.servedBy}</p>}
             <span className={'badge ' + statusClass(order.status)}>{order.status}</span>
           </div>
         </div>
@@ -171,6 +173,7 @@ function Invoice({ order, onClose }) {
 }
 
 export default function Orders() {
+  const { can } = useAuth();
   const [orders, setOrders] = useState(null);
   const [tab, setTab] = useState('All');
   const [query, setQuery] = useState('');
@@ -222,7 +225,7 @@ export default function Orders() {
         <label className="searchbox"><Search size={16} /><input placeholder="Search order, customer or city" value={query} onChange={(e) => setQuery(e.target.value)} /></label>
         <div className="toolbar-end">
           <button className="btn" onClick={exportCsv} disabled={!shown.length}><Download size={16} />Export</button>
-          <button className="btn primary" onClick={() => setCreating(true)}><Plus size={16} />New order</button>
+          {can('orders:create') && <button className="btn primary" onClick={() => setCreating(true)}><Plus size={16} />New order</button>}
         </div>
       </div>
 
@@ -247,8 +250,8 @@ export default function Orders() {
                       <button className="icon" title="View invoice" onClick={() => setViewing(o)}><Eye size={16} /></button>
                       {o.status === 'Placed' && (
                         <>
-                          <button className="icon ok" title="Mark delivered" onClick={() => change(o, 'Delivered')}><Check size={16} /></button>
-                          <button className="icon danger" title="Cancel order" onClick={() => change(o, 'Cancelled')}><X size={16} /></button>
+                          {can('orders:update') && <button className="icon ok" title="Mark delivered" onClick={() => change(o, 'Delivered')}><Check size={16} /></button>}
+                          {can('orders:cancel') && <button className="icon danger" title="Cancel order" onClick={() => change(o, 'Cancelled')}><X size={16} /></button>}
                         </>
                       )}
                     </td>

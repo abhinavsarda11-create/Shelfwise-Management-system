@@ -106,7 +106,7 @@ function RecordForm({ noun, endpoint, fields, options, row, onDone, onClose }) {
   );
 }
 
-export default function Resource({ title, noun, endpoint, columns, fields, search, actions, lookups = {}, filters = [], exportRow, exportName }) {
+export default function Resource({ title, noun, endpoint, columns, fields, search, actions, lookups = {}, filters = [], exportRow, exportName, canWrite = true, canDelete = true }) {
   const [rows, setRows] = useState(null);
   const [options, setOptions] = useState({});
   const [query, setQuery] = useState('');
@@ -118,7 +118,7 @@ export default function Resource({ title, noun, endpoint, columns, fields, searc
 
   useEffect(() => {
     load();
-    Object.entries(lookups).forEach(([key, path]) => api.get(path).then((d) => setOptions((o) => ({ ...o, [key]: d }))));
+    Object.entries(lookups).forEach(([key, path]) => api.get(path).then((d) => setOptions((o) => ({ ...o, [key]: d }))).catch(() => {}));
   }, [load]);
 
   const shown = useMemo(() => {
@@ -168,7 +168,7 @@ export default function Resource({ title, noun, endpoint, columns, fields, searc
           {exportRow && (
             <button className="btn" onClick={() => downloadCsv(exportName, shown.map(exportRow))} disabled={!shown.length}><Download size={16} />Export</button>
           )}
-          <button className="btn primary" onClick={() => setForm({})}><Plus size={16} />Add {noun.toLowerCase()}</button>
+          {canWrite && <button className="btn primary" onClick={() => setForm({})}><Plus size={16} />Add {noun.toLowerCase()}</button>}
         </div>
       </div>
 
@@ -176,7 +176,7 @@ export default function Resource({ title, noun, endpoint, columns, fields, searc
         {rows === null ? (
           <p className="empty">Loading…</p>
         ) : shown.length === 0 ? (
-          <p className="empty">{rows.length ? 'Nothing matches your search.' : `No ${title.toLowerCase()} yet. Add the first one.`}</p>
+          <p className="empty">{rows.length ? 'Nothing matches your search.' : `No ${title.toLowerCase()} yet.${canWrite ? ' Add the first one.' : ''}`}</p>
         ) : (
           <div className="table-wrap">
             <table>
@@ -197,8 +197,8 @@ export default function Resource({ title, noun, endpoint, columns, fields, searc
                     {columns.map((c) => <td key={c.label} className={c.num ? 'num' : ''}>{c.render(r)}</td>)}
                     <td className="row-actions">
                       {actions && actions(r, load)}
-                      <button className="icon" title="Edit" onClick={() => setForm({ row: r })}><Pencil size={16} /></button>
-                      <button className="icon danger" title="Delete" onClick={() => remove(r)}><Trash2 size={16} /></button>
+                      {canWrite && <button className="icon" title="Edit" onClick={() => setForm({ row: r })}><Pencil size={16} /></button>}
+                      {canDelete && <button className="icon danger" title="Delete" onClick={() => remove(r)}><Trash2 size={16} /></button>}
                     </td>
                   </motion.tr>
                 ))}

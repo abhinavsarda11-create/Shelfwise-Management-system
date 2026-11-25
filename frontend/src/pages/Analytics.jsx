@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { IndianRupee, Percent, ShoppingBag, Wallet } from 'lucide-react';
 import { api } from '../api';
-import { compact, money, num } from '../format';
+import { compact, money, num, shortDate } from '../format';
 import { toast } from '../toast';
 import CountUp from '../components/CountUp';
 import ChartTip from '../components/ChartTip';
@@ -47,6 +47,7 @@ export default function Analytics() {
   return (
     <motion.div className="dash" variants={container} initial="hidden" animate="show" key={days}>
       <motion.div variants={item} className="toolbar">{picker}</motion.div>
+      {d.stale && <motion.p variants={item} className="muted tight">Showing the {days} days up to {shortDate(d.asOf)}, the date of your latest order.</motion.p>}
 
       <div className="kpis">
         {[
@@ -66,7 +67,7 @@ export default function Analytics() {
       <motion.section variants={item} className="card pad">
         <h3>Where your sales come from</h3>
         <p className="muted tight">Revenue by delivery city. Larger circles mean more revenue. Click a circle for details.</p>
-        <SalesMap points={d.points} />
+        {d.points.length ? <SalesMap points={d.points} /> : <p className="empty">No Indian cities to plot in this data. Include a city column when importing customers or orders to see them here.</p>}
       </motion.section>
 
       <div className="grid-main">
@@ -126,12 +127,26 @@ export default function Analytics() {
         </motion.section>
       </div>
 
+      {d.countries.length > 1 && (
+        <motion.section variants={item} className="card pad">
+          <h3>Revenue by country</h3>
+          <ul className="bars">
+            {d.countries.slice(0, 8).map((c, i) => (
+              <li key={c._id}>
+                <div><span>{c._id}</span><b>{compact(c.revenue)}</b></div>
+                <div className="track"><motion.i initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.8, delay: 0.2 + i * 0.07 }} style={{ width: `${(c.revenue / d.countries[0].revenue) * 100}%` }} /></div>
+              </li>
+            ))}
+          </ul>
+        </motion.section>
+      )}
+
       <div className="grid-main even">
         <motion.section variants={item} className="card pad">
-          <h3>Revenue by state</h3>
+          <h3>Revenue by region</h3>
           <div className="table-wrap flush">
             <table>
-              <thead><tr><th>State</th><th className="num">Orders</th><th className="num">Revenue</th><th className="num">Share</th></tr></thead>
+              <thead><tr><th>Region</th><th className="num">Orders</th><th className="num">Revenue</th><th className="num">Share</th></tr></thead>
               <tbody>
                 {d.states.slice(0, 10).map((s) => (
                   <tr key={s._id}><td>{s._id || 'Unknown'}</td><td className="num">{s.orders}</td><td className="num">{money(s.revenue)}</td><td className="num">{Math.round((s.revenue / stateTotal) * 100)}%</td></tr>

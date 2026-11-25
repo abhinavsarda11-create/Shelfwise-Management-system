@@ -1,6 +1,8 @@
 const router = require('express').Router();
 const { Order, Product, Customer, StockLog, Counter } = require('../models');
 const { wrap, fail } = require('../utils');
+const requires = require('../middleware/can');
+const { can } = require('../permissions');
 
 const withCustomer = (query) => query.populate('customer', 'name phone email address city state pincode');
 
@@ -9,11 +11,11 @@ const nextOrderNo = async (owner) => {
   return `ORD-${1000 + counter.seq}`;
 };
 
-router.get('/', wrap(async (req, res) => {
+router.get('/', requires('orders:read'), wrap(async (req, res) => {
   res.json(await withCustomer(Order.find({ owner: req.owner }).sort({ createdAt: -1 })));
 }));
 
-router.post('/', wrap(async (req, res) => {
+router.post('/', requires('orders:create'), wrap(async (req, res) => {
   const { customer, items } = req.body;
   const paymentMethod = ['UPI', 'Cash', 'Card', 'Credit'].includes(req.body.paymentMethod) ? req.body.paymentMethod : 'UPI';
   const discountPercent = Math.min(Math.max(Number(req.body.discountPercent) || 0, 0), 50);
@@ -55,6 +57,7 @@ router.post('/', wrap(async (req, res) => {
     order = await Order.create({
       owner: req.owner,
       orderNo,
+      servedBy: req.user.name,
       customer: buyer._id,
       items: lines.map(({ balance, ...line }) => line),
       subtotal,
@@ -73,6 +76,7 @@ router.post('/', wrap(async (req, res) => {
       change: -line.quantity,
       balance: line.balance,
       reason: `Order ${orderNo}`,
+      by: req.user.name,
     })));
     res.status(201).json(await withCustomer(Order.findById(order._id)));
   } catch (error) {
@@ -85,6 +89,7 @@ router.post('/', wrap(async (req, res) => {
 router.put('/:id/status', wrap(async (req, res) => {
   const { status } = req.body;
   if (!['Delivered', 'Cancelled'].includes(status)) throw fail(400, 'Invalid status');
+  if (!can(req.role, status === 'Cancelled' ? 'orders:cancel' : 'orders:update')) throw fail(403, `Your role (${req.role}) cannot ${status === 'Cancelled' ? 'cancel' : 'update'} orders`);
 
   const order = await Order.findOneAndUpdate({ _id: req.params.id, owner: req.owner, status: 'Placed' }, { status }, { new: true });
   if (!order) {
@@ -96,7 +101,7 @@ router.put('/:id/status', wrap(async (req, res) => {
     for (const item of order.items) {
       const product = await Product.findOneAndUpdate({ _id: item.product, owner: req.owner }, { $inc: { stock: item.quantity } }, { new: true });
       if (product) {
-        await StockLog.create({ owner: req.owner, product: product._id, change: item.quantity, balance: product.stock, reason: `Cancelled ${order.orderNo}` });
+        await StockLog.create({ owner: req.owner, product: product._id, change: item.quantity, balance: product.stock, reason: `Cancelled ${order.orderNo}`, by: req.user.name });
       }
     }
   }

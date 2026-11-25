@@ -18,6 +18,37 @@ React 18, Framer Motion, Recharts, Leaflet | Node.js and Express | MongoDB Atlas
 - Insertion: backend/seed.js writes directly into MongoDB collections (suppliers, products, customers, orders, stocklogs, counters), tagged with the account id. It runs when an account is created with sample data ticked, or from Settings, Load sample data.
 - New records you add yourself go through the API routes in backend/routes, which validate and then save to MongoDB.
 
+## Import your own real data (CSV)
+Open Import in the sidebar. Choose what the file contains (Orders, Products, Customers or Suppliers), drop a CSV file, check the column matching, set the options and press Import.
+
+- Orders files are one row per order line. Orders, products and customers are created together. Imported orders are history and do not change stock.
+- Invoices starting with C, or negative quantities, become Cancelled orders.
+- Importing the same file twice does not create duplicates.
+- The dashboard and analytics measure from the latest order date in your data, so old data still shows up.
+- Excel files: save as CSV, or run python tools/xlsx_to_csv.py input.xlsx output.csv (needs pandas and openpyxl).
+- Customers without an Indian city have no map position. They appear in Revenue by country and Revenue by region instead.
+
+Example with a public dataset: the UCI Online Retail dataset (real UK retail transactions, CC BY 4.0, cite the source shown on its page). Convert the xlsx to CSV, import it as Orders, keep the default limit or set it to 0 for every line. Prices are in pounds, so use the price multiplier only if you want a conversion.
+
+## Roles and protected routes
+Every store has one Owner who creates team accounts under Team in the sidebar. There are four roles:
+
+| Role | Can do |
+|---|---|
+| Owner | Everything, including managing the team and resetting data |
+| Manager | Everything except managing the team and resetting data |
+| Staff | Place orders, mark them delivered, add or edit customers, view products and orders |
+| Viewer | Read-only access to records, reports and the dashboard |
+
+How it is enforced:
+- The server decides. Every API route checks the role (backend/permissions.js and backend/middleware/can.js) and returns 403 when it is not allowed. Hiding a button is only a convenience.
+- Every request loads the user from the database, so changing a role or deactivating an account takes effect immediately, even for a signed-in session.
+- Data is scoped to the store: team members only ever see their own store's data.
+- In the browser, pages are protected routes. Menu items a role cannot use are hidden, and opening one directly shows Access denied. Signed-out visitors only see the sign-in page, and return to the page they asked for after signing in.
+- Orders record who served them, and the stock log records who made each change.
+- Only owners can change the store name and city. ALLOW_SIGNUP=false closes public registration, but owners can still add team members.
+- Existing accounts become owners automatically. No data migration is needed.
+
 ## Run locally
 1. Copy backend/.env.example to backend/.env and set MONGODB_URI and JWT_SECRET.
 2. Terminal 1: cd backend, npm install, npm start

@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Area, AreaChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { AlertTriangle, ClipboardList, IndianRupee, Package, ShoppingBag, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
 import { api } from '../api';
-import { change, compact, dateTime, money, num, statusClass } from '../format';
+import { change, compact, dateTime, money, num, shortDate, statusClass } from '../format';
 import { toast } from '../toast';
 import CountUp from '../components/CountUp';
 import ChartTip from '../components/ChartTip';
@@ -65,6 +65,7 @@ export default function Dashboard({ user }) {
         <p>Your workspace is empty. Load the sample retail data to explore every feature, or start adding your own products and customers.</p>
         <div className="row">
           <a className="btn primary" href="#settings">Load sample data</a>
+          <a className="btn" href="#import">Import a file</a>
           <a className="btn" href="#products">Add products</a>
         </div>
       </motion.div>
@@ -83,7 +84,7 @@ export default function Dashboard({ user }) {
       <motion.div variants={item} className="dash-head">
         <div>
           <h2>{greet}, {first}</h2>
-          <p>Here is how {user.storeName} performed over the last 30 days.</p>
+          <p>{d.stale ? `Here is how ${user.storeName} performed in the 30 days up to ${shortDate(d.asOf)}, your latest order.` : `Here is how ${user.storeName} performed over the last 30 days.`}</p>
         </div>
         <div className="pills">
           <a href="#orders"><ClipboardList size={15} />{d.counts.pending} pending orders</a>
@@ -147,7 +148,7 @@ export default function Dashboard({ user }) {
         </motion.section>
 
         <motion.section variants={item} className="card pad">
-          <h3>Revenue by state</h3>
+          <h3>Revenue by region</h3>
           {d.byState.length === 0 ? <p className="muted">No location data yet.</p> : (
             <Bars rows={d.byState.map((s) => ({ key: s._id, label: s._id || 'Unknown', value: s.revenue }))} peak={statePeak} format={compact} />
           )}

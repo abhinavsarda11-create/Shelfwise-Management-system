@@ -39,7 +39,7 @@ function ShelfArt() {
 
 const score = (p) => [p.length >= 8, /[A-Za-z]/.test(p) && /\d/.test(p), /[A-Z]/.test(p) || /[^A-Za-z0-9]/.test(p), p.length >= 12].filter(Boolean).length;
 
-export default function Auth({ onAuth }) {
+export default function Auth({ onAuth, notice }) {
   const [mode, setMode] = useState('login');
   const [cities, setCities] = useState([]);
   const [form, setForm] = useState({ name: '', storeName: '', city: 'Delhi', email: '', password: '', sample: true });
@@ -102,6 +102,8 @@ export default function Auth({ onAuth }) {
 
           <h2>{signup ? 'Set up your store' : 'Welcome back'}</h2>
           <p className="muted">{signup ? 'Create a private workspace for your retail business.' : 'Sign in to continue to your workspace.'}</p>
+
+          {notice && <p className="form-error spaced-bottom">{notice}</p>}
 
           <form onSubmit={submit}>
             <AnimatePresence initial={false}>

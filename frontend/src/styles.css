@@ -290,3 +290,54 @@ select option, select optgroup { background: var(--violet); color: var(--cream);
   .modal { background: #fff; border: 0; box-shadow: none; max-width: none; padding: 0; color: #000; }
   .modal *, .modal small, .modal .muted { color: #000 !important; border-color: #999 !important; }
 }
+
+.import { max-width: 980px; }
+.stack { display: flex; flex-direction: column; gap: 20px; }
+.kinds { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.kind { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 18px; text-align: left; cursor: pointer; color: var(--text); font-family: inherit; }
+.kind span { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: rgba(223, 182, 178, 0.12); color: var(--rose); }
+.kind small { line-height: 1.45; }
+.kind.on { border-color: var(--rose); background: linear-gradient(180deg, rgba(133, 79, 108, 0.45), rgba(82, 43, 91, 0.35)); }
+.drop { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 44px 24px; text-align: center; border: 1.5px dashed var(--line-strong); cursor: pointer; color: var(--muted); transition: background 0.2s, border-color 0.2s; }
+.drop:hover, .drop.over { background: rgba(223, 182, 178, 0.07); border-color: var(--rose); }
+.drop svg { color: var(--rose); }
+.drop strong { color: var(--text); font-size: 16px; }
+.file-head { display: flex; align-items: center; gap: 14px; }
+.file-head svg { color: var(--rose); flex-shrink: 0; }
+.req { color: var(--rose); }
+.import select { min-width: 200px; }
+.notice { display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: center; border-color: var(--line-strong); }
+.notice span { color: var(--muted); }
+.run { max-width: 560px; display: flex; flex-direction: column; gap: 14px; align-items: flex-start; }
+.progress { width: 100%; height: 8px; border-radius: 99px; background: rgba(223, 182, 178, 0.12); overflow: hidden; }
+.progress i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--mauve), var(--rose)); }
+.result-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-top: 8px; }
+.result-grid div { padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: rgba(25, 0, 25, 0.35); }
+.result-grid strong { display: block; font-family: var(--serif); font-weight: 400; font-size: 30px; }
+.result-grid span { color: var(--muted); font-size: 13px; }
+.problems { margin: 10px 0 0; padding-left: 18px; color: var(--muted); font-size: 13.5px; display: grid; gap: 4px; }
+.spaced { margin-top: 22px; }
+.pad h3.spaced { margin-bottom: 8px; }
+@media (max-width: 1100px) { .kinds { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .kinds { grid-template-columns: 1fr; } }
+
+.role { display: inline-block; padding: 2px 10px; border-radius: 99px; font-size: 11.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; border: 1px solid var(--line-strong); color: var(--muted); }
+.role-owner { background: var(--rose); border-color: var(--rose); color: var(--ink); }
+.role-manager { background: rgba(133, 79, 108, 0.55); border-color: var(--mauve); color: var(--cream); }
+.role-staff { background: rgba(82, 43, 91, 0.6); border-color: var(--plum); color: var(--cream); }
+.side-foot .role { margin-top: 6px; }
+.forbidden { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 36px; max-width: 560px; }
+.forbidden svg { color: var(--rose); }
+.forbidden h2 { font-family: var(--serif); font-weight: 400; font-size: 30px; }
+.forbidden p { color: var(--muted); }
+.spaced-bottom { margin-bottom: 14px; }
+.role-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px; }
+.role-cards > div { padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: rgba(25, 0, 25, 0.35); }
+.role-cards p { margin-top: 10px; color: var(--muted); font-size: 13px; line-height: 1.45; }
+.matrix td, .matrix th { padding: 10px 16px; }
+.matrix .center { text-align: center; }
+.matrix .yes { color: var(--ok); vertical-align: middle; }
+.matrix .no { color: var(--faint); }
+label small { font-weight: 400; line-height: 1.4; }
+@media (max-width: 1100px) { .role-cards { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .role-cards { grid-template-columns: 1fr; } }

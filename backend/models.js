@@ -12,6 +12,10 @@ const User = model('User', new Schema({
   password: { type: String, required: true },
   storeName: { type: String, trim: true, default: 'My Store' },
   city: { type: String, trim: true, default: 'Delhi' },
+  role: { type: String, enum: ['owner', 'manager', 'staff', 'viewer'], default: 'owner' },
+  workspace: { type: Schema.Types.ObjectId, ref: 'User', index: true },
+  active: { type: Boolean, default: true },
+  lastLoginAt: Date,
 }, options));
 
 const Supplier = model('Supplier', new Schema({
@@ -24,18 +28,22 @@ const Supplier = model('Supplier', new Schema({
   state: { type: String, trim: true },
 }, options));
 
-const Customer = model('Customer', new Schema({
+const customerSchema = new Schema({
   owner,
   name: { type: String, required: [true, 'Customer name is required'], trim: true },
-  phone: { type: String, required: [true, 'Phone is required'], trim: true, match: [/^\d{10}$/, 'Phone must be 10 digits'] },
+  phone: { type: String, trim: true, match: [/^\d{10}$/, 'Phone must be 10 digits'] },
   email: emailField,
   address: { type: String, trim: true },
   city: { type: String, trim: true },
   state: { type: String, trim: true },
+  country: { type: String, trim: true },
   pincode: { type: String, trim: true, match: [/^\d{6}$/, 'Pincode must be 6 digits'] },
+  externalRef: { type: String, trim: true },
   lat: Number,
   lng: Number,
-}, options));
+}, options);
+customerSchema.index({ owner: 1, externalRef: 1 });
+const Customer = model('Customer', customerSchema);
 
 const productSchema = new Schema({
   owner,
@@ -73,6 +81,8 @@ const orderSchema = new Schema({
   status: { type: String, enum: ['Placed', 'Delivered', 'Cancelled'], default: 'Placed' },
   city: String,
   state: String,
+  country: String,
+  servedBy: String,
   lat: Number,
   lng: Number,
 }, options);
@@ -86,6 +96,7 @@ const stockLogSchema = new Schema({
   change: Number,
   balance: Number,
   reason: String,
+  by: String,
 }, options);
 stockLogSchema.index({ owner: 1, createdAt: -1 });
 const StockLog = model('StockLog', stockLogSchema);
